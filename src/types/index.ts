@@ -22,3 +22,27 @@ export interface Author {
     isbn: string
     quantity: number
   }
+
+// src/types/student.ts
+
+export interface Student {
+  student_id: number
+  student_name: string
+  email: string
+  contact_number: string
+  department: string
+  user: string
+  created_date: string
+  updated_date: string
+  is_deleted: boolean
+}
+
+// Update the StudentFormData interface to match what the API expects
+export interface StudentFormData {
+  student_id?: number
+  student_name: string
+  email: string
+  contact_number: string
+  department: string
+  user?: string
+}

@@ -1,11 +1,9 @@
-"use client"
-
 import type React from "react"
-
+import hsm from "../assets/hsm.svg"
+import hsm2 from "../assets/hsm2.svg"
 import { useState } from "react"
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
-import { Book } from "lucide-react"
 import RegisterModal from "../pages/register-modal"
 
 const Login: React.FC = () => {
@@ -46,7 +44,12 @@ const Login: React.FC = () => {
         {/* Left Side - Login Form */}
         <div className="w-1/2 bg-white p-8 flex flex-col items-center">
           <div className="flex items-center gap-2 mb-4">
-            <Book className="w-8 h-8" />
+            <img 
+            className="w-[150px] h-[150px]"
+            src={hsm}
+            alt="hsm"
+
+            />
           </div>
           <h1 className="text-xl font-semibold text-center mb-1">HSMSS Library Management</h1>
           <h2 className="text-sm text-gray-600 mb-8">Please enter your credentials</h2>
@@ -86,7 +89,7 @@ const Login: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#1B4965] text-white py-2 rounded-md hover:bg-[#1B4965]/90 transition-colors disabled:opacity-70"
+              className="w-1/2 bg-[#1B4965] text-white py-2 rounded-md hover:bg-[#1B4965]/90 transition-colors disabled:opacity-70"
               disabled={loading}
             >
               {loading ? "Logging in..." : "Log In"}
@@ -96,7 +99,11 @@ const Login: React.FC = () => {
 
         {/* Right Side - Register CTA */}
         <div className="w-1/2 bg-[#1B4965] p-8 flex flex-col items-center justify-center text-white">
-          <Book className="w-16 h-16 mb-4 text-gray-300" />
+        <img 
+            className="w-[70px] h-[70px]"
+            src={hsm2}
+            alt="hsm"
+            />
           <h2 className="text-3xl font-bold mb-2">HSMSS Library</h2>
           <p className="text-lg mb-8">New to our platform?</p>
           <button
