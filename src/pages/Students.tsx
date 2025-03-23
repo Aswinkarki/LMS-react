@@ -1,5 +1,5 @@
 import type React from "react"
-import { StudentManager } from "../components/student/StudentManager"
+import StudentManager from "../components/student/StudentManager"
 
 const Student: React.FC = () => {
   return (
@@ -10,4 +10,3 @@ const Student: React.FC = () => {
 }
 
 export default Student
-

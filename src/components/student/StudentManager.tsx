@@ -1,64 +1,150 @@
-"use client"
+import React, { useState, useEffect } from "react";
+import { Student } from "../../types/index";
+import { fetchAllStudents, createStudent, updateStudent, deleteStudent } from "../../services/studentService";
+import StudentForm from "./StudentForm";
+import StudentTable from "./StudentTable";
 
-import type React from "react"
-import { useState } from "react"
-import { UserPlus } from "lucide-react"
-import { useStudents } from "../../hooks/useStudents"
-import { StudentForm } from "./StudentForm"
-import { StudentList } from "./StudentList"
-import type { Student, StudentFormData } from "../../types/index"
+const emptyFormData: Student = {
+  student_id: 0,
+  user: "",
+  student_name: "",
+  email: "",
+  department: "",
+  contact_number: "",
+};
 
-export const StudentManager: React.FC = () => {
-  const { students, loading, error, addStudent, updateStudent, deleteStudent } = useStudents()
-  const [isEditing, setIsEditing] = useState(false)
-  const [currentStudent, setCurrentStudent] = useState<Student | null>(null)
+const StudentManager: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [formData, setFormData] = useState<Student>(emptyFormData);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (studentData: StudentFormData) => {
+  // Fetch all students
+  const loadStudents = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      if (isEditing && currentStudent) {
-        await updateStudent(currentStudent.student_id, studentData)
-        setIsEditing(false)
-        setCurrentStudent(null)
-      } else {
-        await addStudent(studentData)
-      }
+      const data = await fetchAllStudents();
+      setStudents(data);
     } catch (err) {
-      console.error("Error submitting student:", err)
+      setError("Failed to load students. Please try again.");
+      console.error("Load students error:", err);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Function to reset the form
+  const resetForm = () => {
+    setFormData(emptyFormData);
+    setEditingId(null);
+  };
+
+  // Add or update student
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (editingId !== null) {
+        console.log("Updating student with ID:", editingId);
+        console.log("Update data being sent:", formData);
+        
+        // Make sure to include all necessary fields, especially the ID
+        const studentToUpdate = {
+          ...formData,
+          student_id: editingId
+        };
+        
+        const result = await updateStudent(editingId, studentToUpdate);
+        console.log("Update response:", result);
+        alert("Student updated successfully!");
+      } else {
+        const result = await createStudent(formData);
+        console.log("Create response:", result);
+        alert("Student added successfully!");
+      }
+      
+      // Reset form state and reload students
+      resetForm();
+      await loadStudents();
+    } catch (err) {
+      console.error("Operation error:", err);
+      setError("Operation failed. Please check your input and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Edit student
   const handleEdit = (student: Student) => {
-    setCurrentStudent(student)
-    setIsEditing(true)
-  }
+    console.log("Editing student:", student);
+    // Create a deep copy to avoid reference issues
+    setFormData({...student});
+    setEditingId(student.student_id);
+  };
 
+  // Delete student
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this student?")) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await deleteStudent(id);
+      alert("Student deleted successfully!");
+      await loadStudents();
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError("Failed to delete student. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle cancel
   const handleCancel = () => {
-    setIsEditing(false)
-    setCurrentStudent(null)
-  }
+    resetForm();
+  };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="bg-gray-100 p-6 rounded-lg shadow-md mb-6">
-        <div className="flex items-center mb-4">
-          <UserPlus className="mr-2 text-[#1B4965]" />
-          <h2 className="text-xl font-semibold">Add Students</h2>
+    <div className="max-w-4xl mx-auto p-4">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
-        <StudentForm
-          onSubmit={handleSubmit}
-          student={currentStudent}
-          isEditing={isEditing}
-          onCancel={handleCancel}
-          loading={loading}
-          error={error}
+      )}
+      
+      <StudentForm 
+        formData={formData}
+        editingId={editingId}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+      />
+      
+      {loading ? (
+        <div className="text-center py-4">Loading...</div>
+      ) : (
+        <StudentTable 
+          students={students}
+          handleEdit={handleEdit}
+          handleDelete={handleDelete}
         />
-      </div>
-
-      <div className="bg-gray-100 p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Student Lists</h2>
-        <StudentList students={students} loading={loading} onEdit={handleEdit} onDelete={deleteStudent} />
-      </div>
+      )}
     </div>
-  )
-}
+  );
+};
 
+export default StudentManager;
