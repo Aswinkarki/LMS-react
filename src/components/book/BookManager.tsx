@@ -1,17 +1,18 @@
-import type React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { BookOpen } from "lucide-react"
 import { useBooks } from "../../hooks/useBooks"
 import { authorService } from "../../services/authorService"
 import { BookForm } from "./BookForm"
 import { BookList } from "./BookList"
 import type { Book, Author, BookFormData } from "../../types"
+import Toast, { ToastType } from "../toast"  // Make sure to import Toast and ToastType
 
 export const BookManager: React.FC = () => {
   const { books, loading, error, addBook, updateBook, deleteBook } = useBooks()
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [currentBook, setCurrentBook] = useState<Book | null>(null)
   const [authorNames, setAuthorNames] = useState<Record<number, string>>({})
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
 
   useEffect(() => {
     // Fetch all authors to map author_id to names
@@ -37,11 +38,14 @@ export const BookManager: React.FC = () => {
         await updateBook(currentBook.book_id, bookData)
         setIsEditing(false)
         setCurrentBook(null)
+        setToast({ message: "Book updated successfully!", type: "success" })
       } else {
         await addBook(bookData)
+        setToast({ message: "Book added successfully!", type: "success" })
       }
     } catch (err) {
       console.error("Error submitting book:", err)
+      setToast({ message: "Error occurred while submitting book.", type: "error" })
     }
   }
 
@@ -57,6 +61,8 @@ export const BookManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b">
           <div className="flex items-center">
@@ -85,4 +91,3 @@ export const BookManager: React.FC = () => {
     </div>
   )
 }
-

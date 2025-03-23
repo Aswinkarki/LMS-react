@@ -22,7 +22,7 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
 
   return (
     <div 
-      className={`fixed bottom-4 right-4 flex items-center p-4 rounded-md shadow-lg z-50 max-w-md animate-slide-up
+      className={`fixed top-4 right-4 flex items-center p-4 rounded-md shadow-lg z-50 max-w-md animate-slide-up
         ${type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 
           'bg-red-50 text-red-800 border border-red-200'}`}
     >

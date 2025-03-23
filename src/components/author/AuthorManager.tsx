@@ -4,19 +4,27 @@ import { useAuthors } from "../../hooks/useAuthors";
 import { AuthorForm } from "./AuthorForm";
 import { AuthorList } from "./AuthorList";
 import { Author } from "../../types";
+import Toast, { ToastType } from "../toast"; // Import Toast component
 
 export const AuthorManager: React.FC = () => {
   const { authors, loading, error, addAuthor, updateAuthor, deleteAuthor } = useAuthors();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [currentAuthor, setCurrentAuthor] = useState<Author | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null); // Toast state
 
   const handleSubmit = async (authorData: Author) => {
-    if (isEditing && currentAuthor) {
-      await updateAuthor(currentAuthor.author_id, authorData);
-      setIsEditing(false);
-      setCurrentAuthor(null);
-    } else {
-      await addAuthor(authorData);
+    try {
+      if (isEditing && currentAuthor) {
+        await updateAuthor(currentAuthor.author_id, authorData);
+        setToast({ message: "Author updated successfully!", type: "success" });
+        setIsEditing(false);
+        setCurrentAuthor(null);
+      } else {
+        await addAuthor(authorData);
+        setToast({ message: "Author added successfully!", type: "success" });
+      }
+    } catch (err) {
+      setToast({ message: "Operation failed. Please try again.", type: "error" });
     }
   };
 
@@ -30,8 +38,21 @@ export const AuthorManager: React.FC = () => {
     setCurrentAuthor(null);
   };
 
+  const handleDelete = async (authorId: number) => {
+    try {
+      await deleteAuthor(authorId);
+      setToast({ message: "Author deleted successfully!", type: "success" });
+    } catch (err) {
+      setToast({ message: "Failed to delete author. Please try again.", type: "error" });
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
+
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b">
           <div className="flex items-center">
@@ -59,7 +80,7 @@ export const AuthorManager: React.FC = () => {
           authors={authors}
           loading={loading}
           onEdit={handleEdit}
-          onDelete={deleteAuthor}
+          onDelete={handleDelete} // Pass the delete handler here
         />
       </div>
     </div>

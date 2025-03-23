@@ -3,6 +3,7 @@ import { Student } from "../../types/index";
 import { fetchAllStudents, createStudent, updateStudent, deleteStudent } from "../../services/studentService";
 import StudentForm from "./StudentForm";
 import StudentTable from "./StudentTable";
+import Toast, { ToastType } from "../toast"; // Import Toast component
 
 const emptyFormData: Student = {
   student_id: 0,
@@ -19,6 +20,7 @@ const StudentManager: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Fetch all students
   const loadStudents = async () => {
@@ -58,30 +60,19 @@ const StudentManager: React.FC = () => {
     
     try {
       if (editingId !== null) {
-        console.log("Updating student with ID:", editingId);
-        console.log("Update data being sent:", formData);
-        
-        // Make sure to include all necessary fields, especially the ID
-        const studentToUpdate = {
-          ...formData,
-          student_id: editingId
-        };
-        
-        const result = await updateStudent(editingId, studentToUpdate);
-        console.log("Update response:", result);
-        alert("Student updated successfully!");
+        const studentToUpdate = { ...formData, student_id: editingId };
+        await updateStudent(editingId, studentToUpdate);
+        setToast({ message: "Student updated successfully!", type: "success" });
       } else {
-        const result = await createStudent(formData);
-        console.log("Create response:", result);
-        alert("Student added successfully!");
+        await createStudent(formData);
+        setToast({ message: "Student added successfully!", type: "success" });
       }
       
-      // Reset form state and reload students
       resetForm();
       await loadStudents();
     } catch (err) {
-      console.error("Operation error:", err);
       setError("Operation failed. Please check your input and try again.");
+      setToast({ message: "Operation failed. Please try again.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -89,9 +80,7 @@ const StudentManager: React.FC = () => {
 
   // Edit student
   const handleEdit = (student: Student) => {
-    console.log("Editing student:", student);
-    // Create a deep copy to avoid reference issues
-    setFormData({...student});
+    setFormData({ ...student });
     setEditingId(student.student_id);
   };
 
@@ -104,11 +93,11 @@ const StudentManager: React.FC = () => {
     
     try {
       await deleteStudent(id);
-      alert("Student deleted successfully!");
+      setToast({ message: "Student deleted successfully!", type: "success" });
       await loadStudents();
     } catch (err) {
-      console.error("Delete error:", err);
       setError("Failed to delete student. Please try again.");
+      setToast({ message: "Failed to delete student.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -125,6 +114,11 @@ const StudentManager: React.FC = () => {
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
       
       <StudentForm 
