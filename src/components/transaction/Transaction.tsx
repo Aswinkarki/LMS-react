@@ -76,7 +76,7 @@ const Transaction = () => {
                 transactions.map((transaction) => (
                   <tr key={transaction.transaction_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.transaction_id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.user}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.librarian_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.student_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.book_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
