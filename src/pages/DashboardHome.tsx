@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { User, Book, Building } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 type DashboardData = {
   total_student_count: number;
@@ -11,10 +13,11 @@ type DashboardData = {
 
 type OverdueBorrower = {
   borrowed_id: string;
-  student_name:string;
+  student_name: string;
 };
 
 const DashboardHome: React.FC = () => {
+  const { logout } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     total_student_count: 0,
     total_book_count: 0,
@@ -27,44 +30,64 @@ const DashboardHome: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (!accessToken) {
+        logout();
+        return;
+      }
+
       try {
         setLoading(true);
         
         // Fetch dashboard data
-        const dashboardResponse = await fetch('http://127.0.0.1:8000/dashboard/');
-        if (!dashboardResponse.ok) {
-          throw new Error(`Failed to fetch dashboard data. Status: ${dashboardResponse.status}`);
-        }
-        const dashboardResult = await dashboardResponse.json();
+        const dashboardResponse = await axios.get(
+          'http://127.0.0.1:8000/dashboard/', 
+          {
+            headers: { 
+              'Authorization': `Bearer ${accessToken}` 
+            }
+          }
+        );
         
         // Fetch overdue borrowers
-        const overdueResponse = await fetch('http://127.0.0.1:8000/dashboard/GetOverdueBorrowers');
-        if (!overdueResponse.ok) {
-          throw new Error(`Failed to fetch overdue borrowers. Status: ${overdueResponse.status}`);
-        }
-        const overdueResult = await overdueResponse.json();
+        const overdueResponse = await axios.get(
+          'http://127.0.0.1:8000/dashboard/GetOverdueBorrowers',
+          {
+            headers: { 
+              'Authorization': `Bearer ${accessToken}` 
+            }
+          }
+        );
         
-        setDashboardData(dashboardResult);
-        setOverdueBorrowers(overdueResult);
+        setDashboardData(dashboardResponse.data);
+        setOverdueBorrowers(overdueResponse.data);
         setError(null);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load data. Please try again later.");
+      } catch (err: any) {
+        console.error("Dashboard fetch error:", err);
+        
+        // Handle token expiration or unauthorized access
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          setError("Session expired. Please log in again.");
+          logout();
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchDashboardData();
+  }, [logout]);
 
   // Calculate the percentage for the pie chart
   const borrowedPercentage = dashboardData.total_borrowed_books + dashboardData.total_returned_books > 0 
     ? (dashboardData.total_borrowed_books / (dashboardData.total_borrowed_books + dashboardData.total_returned_books)) * 360
     : 0;
 
-  // Display only first 5 overdue borrowers and handle pagination later if needed
+  // Display only first 5 overdue borrowers
   const displayedBorrowers = overdueBorrowers.slice(0, 5);
 
   return (
@@ -76,9 +99,10 @@ const DashboardHome: React.FC = () => {
       )}
       
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading dashboard data...</p>
-        </div>
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        
       ) : (
         <>
           {/* Stats Cards */}
@@ -88,7 +112,9 @@ const DashboardHome: React.FC = () => {
                 <User className="h-6 w-6 text-gray-700" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">{dashboardData.total_student_count.toString().padStart(4, '0')}</h2>
+                <h2 className="text-3xl font-bold">
+                  {dashboardData.total_student_count.toString().padStart(4, '0')}
+                </h2>
                 <p className="text-gray-500">Total User Base</p>
               </div>
             </div>
@@ -98,7 +124,9 @@ const DashboardHome: React.FC = () => {
                 <Book className="h-6 w-6 text-gray-700" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">{dashboardData.total_book_count.toString().padStart(4, '0')}</h2>
+                <h2 className="text-3xl font-bold">
+                  {dashboardData.total_book_count.toString().padStart(4, '0')}
+                </h2>
                 <p className="text-gray-500">Total Book Count</p>
               </div>
             </div>
@@ -108,7 +136,9 @@ const DashboardHome: React.FC = () => {
                 <Building className="h-6 w-6 text-gray-700" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">{dashboardData.total_transaction_count.toString().padStart(4, '0')}</h2>
+                <h2 className="text-3xl font-bold">
+                  {dashboardData.total_transaction_count.toString().padStart(4, '0')}
+                </h2>
                 <p className="text-gray-500">Transaction Count</p>
               </div>
             </div>
@@ -160,18 +190,32 @@ const DashboardHome: React.FC = () => {
               ) : (
                 <div className="space-y-2">
                   {displayedBorrowers.map((borrower, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex items-center">
                         <User className="h-5 w-5 mr-2" />
                         <div>
                           <div>{borrower.student_name}</div>
-                          <div className="text-xs text-gray-500">Borrowed ID: {borrower.borrowed_id}</div>
+                          <div className="text-xs text-gray-500">
+                            Borrowed ID: {borrower.borrowed_id}
+                          </div>
                         </div>
                       </div>
                       <button className="text-gray-500 hover:text-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="h-5 w-5" 
+                          viewBox="0 0 20 20" 
+                          fill="currentColor"
+                        >
                           <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          <path 
+                            fillRule="evenodd" 
+                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" 
+                            clipRule="evenodd" 
+                          />
                         </svg>
                       </button>
                     </div>

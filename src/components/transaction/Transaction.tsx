@@ -1,29 +1,18 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-
-interface TransactionData {
-  transaction_id: number;
-  student: number;
-  user: string;
-  book: number;
-  transaction_type: string;
-  date: string;
-  student_name: string;
-  librarian_name: string;
-  book_name: string;
-}
+import { fetchTransactions } from '../../services/transactionService';
+import { TransactionResponse } from '../../types/index';
 
 const Transaction = () => {
-  const [transactions, setTransactions] = useState<TransactionData[]>([]);
+  const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const loadTransactions = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<TransactionData[]>('http://127.0.0.1:8000/transactions/');
-        setTransactions(response.data);
+        const data = await fetchTransactions();
+        setTransactions(data);
       } catch (err) {
         setError('Failed to fetch transactions');
         console.error('Error fetching transactions:', err);
@@ -32,7 +21,7 @@ const Transaction = () => {
       }
     };
 
-    fetchTransactions();
+    loadTransactions();
   }, []);
 
   if (loading) {
@@ -64,9 +53,9 @@ const Transaction = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">T_ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S_ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book ID</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction Type</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               </tr>
@@ -76,9 +65,9 @@ const Transaction = () => {
                 transactions.map((transaction) => (
                   <tr key={transaction.transaction_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.transaction_id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.librarian_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.student_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.book_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.librarian_name || transaction.user}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.student_name || transaction.student}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.book_name || transaction.book}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         transaction.transaction_type.toLowerCase() === 'borrow'

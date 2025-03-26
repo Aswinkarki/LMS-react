@@ -1,18 +1,17 @@
 import React from "react";
 import { StudentFormProps } from "../../types/index";
 
-const StudentForm: React.FC<StudentFormProps> = ({
+interface ExtendedStudentFormProps extends StudentFormProps {
+  handleCancel?: () => void; // Optional handleCancel prop
+}
+
+const StudentForm: React.FC<ExtendedStudentFormProps> = ({
   formData,
   editingId,
   handleChange,
   handleSubmit,
+  handleCancel,
 }) => {
-  // Function to reset the form
-  const resetForm = () => {
-    // Reset the form using form element directly if needed
-    document.forms[0].reset();
-  };
-
   return (
     <div className="bg-gray-100 p-6 rounded-lg shadow-sm mb-6">
       <h2 className="text-xl font-bold mb-4 flex items-center">
@@ -84,12 +83,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
           {editingId !== null && (
             <button
               type="button"
-              onClick={() => {
-                resetForm();
-                // We need to create a function that will reset the state in the parent component
-                // This will be implemented in StudentManager.tsx
-                window.location.reload(); // Temporary solution
-              }}
+              onClick={handleCancel}
               className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 w-40"
             >
               Cancel

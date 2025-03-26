@@ -1,102 +1,205 @@
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react"
-import { createTransaction } from "../services/transactionService"
-import Toast, { type ToastType } from "../components/toast"
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { useAuth } from "../context/AuthContext";
+import { createTransaction } from "../services/transactionService";
+import Toast, { type ToastType } from "../components/toast";
+import { TransactionData, TransactionResponse } from "../types/index";
+import hsm from "../assets/hsm.svg"
+
+// Popup Component
+interface IssueDetailsPopupProps {
+  isOpen: boolean;
+  onClose: () => void;
+  transactionDetails: {
+    transaction_id: number;
+    bookId: string;
+    bookTitle: string;
+    studentId: string;
+    student_name: string;
+    date: string;
+    transactionType: "borrow" | "return";
+    librarian: string;
+  };
+}
+
+const IssueDetailsPopup: React.FC<IssueDetailsPopupProps> = ({ isOpen, onClose, transactionDetails }) => {
+  if (!isOpen) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:bg-white print:bg-opacity-100">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full border-t-4 border-[#1B4965] print:shadow-none print:border-0 print:max-w-full">
+        {/* Header with Logo and Branding */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            {/* Placeholder for Logo */}
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mr-3">
+            <img src={hsm} alt="HSMSS Logo" className="w-12 h-12 rounded-full mr-3" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-[#1B4965]">
+                Hetauda School Of Management and Social Sciences
+              </h1>
+              <h2 className="text-md font-semibold text-gray-800">Library Receipt</h2>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Details */}
+        <div className="space-y-3 border-t border-gray-200 pt-4">
+          <p className="text-sm">
+            <strong className="text-gray-700">Transaction ID:</strong> {transactionDetails.transaction_id}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Book Title:</strong> {transactionDetails.bookTitle || "N/A"}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Student ID:</strong> {transactionDetails.studentId}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Student Name:</strong> {transactionDetails.student_name || "N/A"}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Date:</strong> {transactionDetails.date}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Transaction Type:</strong> {transactionDetails.transactionType}
+          </p>
+          <p className="text-sm">
+            <strong className="text-gray-700">Librarian:</strong> {transactionDetails.librarian}
+          </p>
+        </div>
+
+        {/* Signature Section */}
+        <div className="mt-6 border-t border-gray-200 pt-4">
+          <div className="mt-2 h-12 border-b border-gray-300 w-48"></div>
+          <p className="text-xs text-gray-500 mt-1">Signature of the Librarian</p>
+        </div>
+
+        {/* Buttons - Hidden when printing */}
+        <div className="mt-6 flex justify-end space-x-4 print:hidden">
+          <button
+            onClick={handlePrint}
+            className="px-4 py-2 bg-[#1B4965] text-white rounded hover:bg-[#1B4965]/90 transition-colors"
+          >
+            Print
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 interface FormData {
-  bookId: string
-  userId: string
-  username: string
-  studentId: string
-  bookTitle: string
-  date: string
-  transactionType: "borrow" | "return"
+  bookId: string;
+  studentId: string;
+  bookTitle: string;
+  date: string;
+  transactionType: "borrow" | "return";
 }
 
 const IssueBook = () => {
+  const { user, api } = useAuth(); // Use api for additional requests if needed
   const [formData, setFormData] = useState<FormData>({
     bookId: "",
-    userId: "",
-    username: "",
     studentId: "",
     bookTitle: "",
     date: new Date().toISOString().split("T")[0],
     transactionType: "borrow",
-  })
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [toast, setToast] = useState<{ message: string; type: ToastType }>({
-    message: "",
-    type: null,
-  })
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+  const [transactionDetails, setTransactionDetails] = useState<IssueDetailsPopupProps["transactionDetails"] | null>(null);
 
-  // Load user data from localStorage when component mounts
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUserId = localStorage.getItem("userId")
-      const storedUsername = localStorage.getItem("username")
-
-      if (storedUserId || storedUsername) {
-        setFormData((prevData) => ({
-          ...prevData,
-          userId: storedUserId || "",
-          username: storedUsername || "",
-        }))
-      }
+    if (user) {
+      setFormData((prevData) => ({
+        ...prevData,
+      }));
     }
-  }, [])
+  }, [user]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
-    })
-  }
+    });
+  };
 
   const formatDate = (dateString: string): string => {
-    return dateString.replace(/-/g, "/")
-  }
+    return dateString.replace(/-/g, "/");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      // Use the userId from localStorage for the transaction
-      const transactionData = {
+      const transactionData: TransactionData = {
         student: Number.parseInt(formData.studentId),
-        user: formData.userId, // This will be the UUID from localStorage
+        user: user?.userId || "",
         book: Number.parseInt(formData.bookId),
         transaction_type: formData.transactionType,
         date: formatDate(formData.date),
+      };
+
+      // Assuming createTransaction returns TransactionResponse
+      const response = await createTransaction(transactionData) as TransactionResponse;
+      const actionText = formData.transactionType === "borrow" ? "borrowed" : "returned";
+
+      // If createTransaction doesn’t return student_name, fetch it separately
+      let studentName = response.student_name;
+      if (!studentName) {
+        const studentResponse = await api.get(`/students/${formData.studentId}/`); // Adjust endpoint
+        studentName = studentResponse.data.name || "Unknown";
       }
 
-      const response = await createTransaction(transactionData)
-      const actionText = formData.transactionType === "borrow" ? "borrowed" : "returned"
+      // Set transaction details for the popup
+      setTransactionDetails({
+        transaction_id: response.transaction_id,
+        bookId: formData.bookId,
+        bookTitle: formData.bookTitle || response.book_name || "N/A",
+        studentId: formData.studentId,
+        student_name: studentName,
+        date: formData.date,
+        transactionType: formData.transactionType,
+        librarian: user?.username || response.librarian_name || "Unknown",
+      });
+      setIsPopupOpen(true); // Open the popup
 
       setToast({
         message: `Book successfully ${actionText}. Transaction ID: ${response.transaction_id}`,
         type: "success",
-      })
+      });
 
-      // Reset form data after successful transaction but keep the user info
+      // Reset form
       setFormData({
         bookId: "",
-        userId: formData.userId, // Keep the user ID
-        username: formData.username, // Keep the username
         studentId: "",
         bookTitle: "",
         date: new Date().toISOString().split("T")[0],
         transactionType: "borrow",
-      })
+      });
     } catch (error) {
       setToast({
         message: `Failed to ${formData.transactionType} book: ${error instanceof Error ? error.message : "Unknown error"}`,
         type: "error",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4">
@@ -112,9 +215,9 @@ const IssueBook = () => {
             </svg>
             <h2 className="text-xl font-semibold">Issue Book</h2>
           </div>
-          {formData.username && (
+          {user?.username && (
             <div className="text-sm text-gray-600">
-              Librarian: <span className="font-medium">{formData.username}</span>
+              Librarian: <span className="font-medium">{user.username}</span>
             </div>
           )}
         </div>
@@ -133,8 +236,6 @@ const IssueBook = () => {
               />
             </div>
 
-           
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Book Title</label>
               <input
@@ -145,6 +246,7 @@ const IssueBook = () => {
                 className="w-full p-2 bg-gray-200 border-0 rounded-md"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
               <input
@@ -181,20 +283,31 @@ const IssueBook = () => {
               </select>
             </div>
 
-            <button type="submit" className="w-full mt-4 p-2 bg-[#1B4965] text-white rounded" disabled={isLoading}>
+            <button
+              type="submit"
+              className="w-full mt-4 p-2 bg-[#1B4965] text-white rounded disabled:opacity-50"
+              disabled={isLoading}
+            >
               {isLoading ? "Processing..." : "Issue"}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Toast notification */}
-      {toast.type && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: null })} />
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+      )}
+
+      {/* Popup for Issuing Details */}
+      {transactionDetails && (
+        <IssueDetailsPopup
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          transactionDetails={transactionDetails}
+        />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default IssueBook
-
+export default IssueBook;

@@ -3,7 +3,7 @@ import { Student } from "../../types/index";
 import { fetchAllStudents, createStudent, updateStudent, deleteStudent } from "../../services/studentService";
 import StudentForm from "./StudentForm";
 import StudentTable from "./StudentTable";
-import Toast, { ToastType } from "../toast"; // Import Toast component
+import Toast, { ToastType } from "../toast";
 
 const emptyFormData: Student = {
   student_id: 0,
@@ -22,7 +22,6 @@ const StudentManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Fetch all students
   const loadStudents = async () => {
     setLoading(true);
     setError(null);
@@ -41,23 +40,19 @@ const StudentManager: React.FC = () => {
     loadStudents();
   }, []);
 
-  // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Function to reset the form
   const resetForm = () => {
     setFormData(emptyFormData);
     setEditingId(null);
   };
 
-  // Add or update student
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
     try {
       if (editingId !== null) {
         const studentToUpdate = { ...formData, student_id: editingId };
@@ -67,7 +62,6 @@ const StudentManager: React.FC = () => {
         await createStudent(formData);
         setToast({ message: "Student added successfully!", type: "success" });
       }
-      
       resetForm();
       await loadStudents();
     } catch (err) {
@@ -78,19 +72,15 @@ const StudentManager: React.FC = () => {
     }
   };
 
-  // Edit student
   const handleEdit = (student: Student) => {
     setFormData({ ...student });
     setEditingId(student.student_id);
   };
 
-  // Delete student
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this student?")) return;
-    
     setLoading(true);
     setError(null);
-    
     try {
       await deleteStudent(id);
       setToast({ message: "Student deleted successfully!", type: "success" });
@@ -103,11 +93,6 @@ const StudentManager: React.FC = () => {
     }
   };
 
-  // Function to handle cancel
-  const handleCancel = () => {
-    resetForm();
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-4">
       {error && (
@@ -116,7 +101,6 @@ const StudentManager: React.FC = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
@@ -126,6 +110,7 @@ const StudentManager: React.FC = () => {
         editingId={editingId}
         handleChange={handleChange}
         handleSubmit={handleSubmit}
+        handleCancel={resetForm} // Pass resetForm as handleCancel
       />
       
       {loading ? (

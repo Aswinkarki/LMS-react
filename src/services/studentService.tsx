@@ -1,11 +1,11 @@
-import axios from "axios";
+import { api } from "../context/AuthContext"; // Import the configured axios instance
 import { Student } from "../types/index";
 
-const API_URL = "http://127.0.0.1:8000/students/students/";
+const API_URL = "students/students/"; // Relative to baseURL in AuthContext
 
 export const fetchAllStudents = async () => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await api.get(API_URL);
     return response.data;
   } catch (error) {
     console.error("Error fetching students:", error);
@@ -15,7 +15,7 @@ export const fetchAllStudents = async () => {
 
 export const createStudent = async (studentData: Student) => {
   try {
-    const response = await axios.post(API_URL, studentData);
+    const response = await api.post(API_URL, studentData);
     return response.data;
   } catch (error) {
     console.error("Error creating student:", error);
@@ -25,28 +25,15 @@ export const createStudent = async (studentData: Student) => {
 
 export const updateStudent = async (id: number, studentData: Student) => {
   try {
-    // Ensure proper URL formatting and log for debugging
-    const updateUrl = API_URL.endsWith('/') 
-      ? `${API_URL}${id}/` 
-      : `${API_URL}/${id}/`;
-    
-    console.log("Update URL:", updateUrl);
-    
-    // Instead of creating a new object, use the entire studentData object
-    // The backend might be checking if email field exists before generating a random one
-    // Make sure to explicitly include the email in the request
+    const updateUrl = `${API_URL}${id}/`;
     const dataToSend = {
       student_name: studentData.student_name,
-      email: studentData.email, // Make sure this is explicitly included
+      email: studentData.email,
       department: studentData.department,
       contact_number: studentData.contact_number,
-      user: studentData.user
+      user: studentData.user,
     };
-    
-    console.log("Data being sent:", dataToSend);
-    
-    // Try using PATCH instead of PUT as it might handle partial updates better
-    const response = await axios.put(updateUrl, dataToSend);
+    const response = await api.put(updateUrl, dataToSend);
     return response.data;
   } catch (error: any) {
     console.error("Error updating student:", error);
@@ -57,15 +44,66 @@ export const updateStudent = async (id: number, studentData: Student) => {
 
 export const deleteStudent = async (id: number) => {
   try {
-    // Ensure proper URL formatting
-    const deleteUrl = API_URL.endsWith('/') 
-      ? `${API_URL}${id}/` 
-      : `${API_URL}/${id}/`;
-      
-    await axios.delete(deleteUrl);
+    const deleteUrl = `${API_URL}${id}/`;
+    await api.delete(deleteUrl);
     return true;
   } catch (error) {
     console.error("Error deleting student:", error);
     throw error;
   }
 };
+
+
+// import { api } from "../context/AuthContext"; // Import the configured axios instance
+// import { Student } from "../types/index";
+
+// const API_URL = "students/students/"; // Relative to baseURL in AuthContext
+
+// export const fetchAllStudents = async () => {
+//   try {
+//     const response = await api.get(API_URL);
+//     return response.data;
+//   } catch (error: any) {
+//     console.error("Error fetching students:", error.response?.data || error.message);
+//     throw error; // Let the caller handle the error; interceptor handles token expiration
+//   }
+// };
+
+// export const createStudent = async (studentData: Student) => {
+//   try {
+//     const response = await api.post(API_URL, studentData);
+//     return response.data;
+//   } catch (error: any) {
+//     console.error("Error creating student:", error.response?.data || error.message);
+//     throw error; // Let the caller handle the error
+//   }
+// };
+
+// export const updateStudent = async (id: number, studentData: Student) => {
+//   try {
+//     const updateUrl = `${API_URL}${id}/`;
+//     const dataToSend = {
+//       student_name: studentData.student_name,
+//       email: studentData.email,
+//       department: studentData.department,
+//       contact_number: studentData.contact_number,
+//       user: studentData.user,
+//     };
+//     const response = await api.put(updateUrl, dataToSend);
+//     return response.data;
+//   } catch (error: any) {
+//     console.error("Error updating student:", error.response?.data || error.message);
+//     throw error; // Let the caller handle the error
+//   }
+// };
+
+// export const deleteStudent = async (id: number) => {
+//   try {
+//     const deleteUrl = `${API_URL}${id}/`;
+//     await api.delete(deleteUrl);
+//     return true;
+//   } catch (error: any) {
+//     console.error("Error deleting student:", error.response?.data || error.message);
+//     throw error; // Let the caller handle the error
+//   }
+// };

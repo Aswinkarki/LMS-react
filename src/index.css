@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+@layer base {
+    @media print {
+      body * {
+        visibility: visible;
+      }
+      
+      button, .print-hide {
+        display: none !important;
+      }
+      
+      .print-show {
+        display: block !important;
+      }
+      
+      @page {
+        size: auto;
+        margin: 10mm;
+      }
+      
+      html, body {
+        background-color: white;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    }
+  }
+  
