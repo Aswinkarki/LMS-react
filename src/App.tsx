@@ -1,19 +1,20 @@
-// import Favicon from "./components/FavIcon";
-import { useEffect } from "react";
-import hsm from "../src/assets/hsm.svg"
-import AppRoutes from "./routes";
-import { setFavicon } from "./services/favicon.service";
+import { useEffect } from 'react';
+import Favicon from './components/FavIcon';
+import hsm from './assets/hsm.svg';
+import { setFavicon } from './services/favicon.service';
+import AppRoutes from './routes';
+import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
   useEffect(() => {
     setFavicon(hsm);
   }, []);
+
   return (
-    <>
-     {/* <Favicon url={hsm} /> */}
-     <AppRoutes/>
-    </>
-   
+    <AuthProvider>
+      <Favicon url={hsm} />
+      <AppRoutes />
+    </AuthProvider>
   );
 };
 
