@@ -1,4 +1,4 @@
-import { api } from "../context/AuthContext";
+import api from '../services/api';
 import { TransactionData, TransactionResponse } from "../types/index";
 
 const API_BASE_URL = "transactions/";

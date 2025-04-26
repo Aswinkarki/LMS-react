@@ -1,4 +1,4 @@
-import { api } from "../context/AuthContext"; // Import the configured axios instance
+import api from '../services/api'; // Import the configured axios instance
 import { Student } from "../types/index";
 
 const API_URL = "students/students/"; // Relative to baseURL in AuthContext
